@@ -128,7 +128,7 @@ func ReadPBM(filename string) (*PBM, error) {
 }
 
 func (pbm *PBM) Size() (int, int) {
-	return pbm.height, pbm.width;
+	return pbm.width, pbm.height;
 }
 
 func (pbm *PBM) At(x, y int) bool {
