@@ -14,7 +14,7 @@ type PBM struct {
 }
 
 func main() {
-	image, err := ReadPBM("p1.pbm")
+	image, err := ReadPBM("p4ç.pbm")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -22,20 +22,31 @@ func main() {
 	
 	DisplayPBM(image);
 	fmt.Println("Done loading image");
-
 	width, height := image.Size()
-	fmt.Println("Image Size:", width, "x", height)
+	fmt.Println(image.magicNumber, width, "x", height)
 
-	value := image.At(2, 3)
-	fmt.Println("Pixel value at (2, 3):", value)
+	/*value := image.At(4, 0)
+	fmt.Println("Pixel value at (4, 0) is", value)
 
-	image.Set(0, 0, false);
-	fmt.Println("Pixel value at (0, 0) changed to:", value)
+	image.Set(4, 0, false);
+	fmt.Println("Pixel value at (4, 0) changed to false")
+	image.Set(4, 4, false);
+	fmt.Println("Pixel value at (4, 4) changed to false")
 	DisplayPBM(image);
 
 	image.Invert();
 	fmt.Println("Image inverted:")
 	DisplayPBM(image);
+
+	image.Flip();
+	fmt.Println("Image flipped:")
+	DisplayPBM(image);
+
+	image.Flop();
+	fmt.Println("Image flopped:")
+	DisplayPBM(image);*/
+
+	//image.SetMagicNumber("P4");
 
 	err = image.Save("output.pbm")
 	if err != nil {
@@ -82,12 +93,21 @@ func ReadPBM(filename string) (*PBM, error) {
 		} else {
 			for _, char := range line {
 				valid := false;
-				if char == '1' {
-					row = append(row, true)
-					valid = true;
-				} else if char == '0' {
-					row = append(row, false)
-					valid = true;
+				if pbm.magicNumber == "P1" {
+					if char == '1' {
+						row = append(row, true)
+						valid = true;
+					} else if char == '0' {
+						row = append(row, false)
+						valid = true;
+					}
+				} else if pbm.magicNumber == "P4" {
+					b := byte(char - '0')
+					for i := 7; i >= 0; i-- {
+						bit := (b >> uint(i)) & 1
+						row = append(row, bit == 1)
+					}
+					valid = true
 				}
 				if valid {
 					if len(row) == pbm.width {
@@ -112,11 +132,11 @@ func (pbm *PBM) Size() (int, int) {
 }
 
 func (pbm *PBM) At(x, y int) bool {
-	return pbm.data[x][y];
+	return pbm.data[y][x];
 }
 
 func (pbm *PBM) Set(x, y int, value bool) {
-	pbm.data[x][y] = value;
+	pbm.data[y][x] = value;
 }
 
 func (pbm *PBM) Save(filename string) error {
@@ -130,10 +150,22 @@ func (pbm *PBM) Save(filename string) error {
 	fmt.Fprintf(writer, "%d %d\n", pbm.width, pbm.height)
 	for _, row := range pbm.data {
 		for _, pixel := range row {
-			if pixel {
-				fmt.Fprint(writer, "1 ")
-			} else {
-				fmt.Fprint(writer, "0 ")
+			if pbm.magicNumber == "P1" {
+				if pixel {
+					fmt.Fprint(writer, "1")
+				} else {
+					fmt.Fprint(writer, "0")
+				}
+			} else if pbm.magicNumber == "P4" {
+				for i := 0; i < len(row); i += 8 {
+					var byteValue byte
+					for j := 0; j < 8 && i+j < len(row); j++ {
+						if row[i+j] {
+							byteValue |= 1 << uint(7-j)
+						}
+					}
+					fmt.Fprintf(writer, "%c", byteValue)
+				}
 			}
 		}
 		fmt.Fprintln(writer)
@@ -152,18 +184,39 @@ func (pbm *PBM) Invert() {
 	}
 }
 
-/*func (pbm *PBM) Flip() {
-	// ...
+func (pbm *PBM) Flip() {
+	for y, _ := range pbm.data {
+		cursor := pbm.width - 1;
+		for x := 0; x < pbm.width; x++ {
+			temp := pbm.data[y][x];
+			pbm.data[y][x] = pbm.data[y][cursor];
+			pbm.data[y][cursor] = temp;
+			cursor--;
+			if cursor < x || cursor == x {
+				break;
+			}
+		}
+	}
 }
 
 func (pbm *PBM) Flop() {
-	// ...
+	cursor := pbm.height - 1;
+	for y, _ := range pbm.data {
+		temp := pbm.data[y];
+		pbm.data[y] = pbm.data[cursor];
+		pbm.data[cursor] = temp;
+		cursor--;
+		if cursor < y || cursor == y {
+			break;
+		}
+	}
 }
-
 func (pbm *PBM) SetMagicNumber(magicNumber string) {
-	// ...
+	pbm.magicNumber = magicNumber;
 }
 
+
+/*
 type PGM struct {
 	data          [][]uint8
 	width, height int
