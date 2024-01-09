@@ -20,18 +20,7 @@ func main() {
 		return
 	}
 	
-	for y, _ := range image.data {
-		output := "";
-		for x, _ := range image.data[y] {
-			val := image.data[y][x];
-			if val {
-				output = output + "1";
-			} else {
-				output = output + "0";
-			}
-		}
-		fmt.Println(output);
-	}
+	DisplayPBM(image);
 	fmt.Println("Done loading image");
 
 	width, height := image.Size()
@@ -39,6 +28,37 @@ func main() {
 
 	value := image.At(2, 3)
 	fmt.Println("Pixel value at (2, 3):", value)
+
+	image.Set(0, 0, false);
+	fmt.Println("Pixel value at (0, 0) changed to:", value)
+	DisplayPBM(image);
+
+	image.Invert();
+	fmt.Println("Image inverted:")
+	DisplayPBM(image);
+
+	err = image.Save("output.pbm")
+	if err != nil {
+		fmt.Println("Error saving the image:", err)
+		return
+	}
+	fmt.Println("Image saved successfully.")
+}
+
+func DisplayPBM(pbm *PBM) {
+	for y, _ := range pbm.data {
+		output := "";
+		for x, _ := range pbm.data[y] {
+			val := pbm.data[y][x];
+			if val {
+				output = output + "1 ";
+			} else {
+				output = output + "0 ";
+			}
+		}
+		fmt.Println(output);
+	}
+	fmt.Println("");
 }
 
 func ReadPBM(filename string) (*PBM, error) {
@@ -99,15 +119,40 @@ func (pbm *PBM) Set(x, y int, value bool) {
 	pbm.data[x][y] = value;
 }
 
-/*func (pbm *PBM) Save(filename string) error {
-	// ...
+func (pbm *PBM) Save(filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	writer := bufio.NewWriter(file)
+	fmt.Fprint(writer, pbm.magicNumber + "\n")
+	fmt.Fprintf(writer, "%d %d\n", pbm.width, pbm.height)
+	for _, row := range pbm.data {
+		for _, pixel := range row {
+			if pixel {
+				fmt.Fprint(writer, "1 ")
+			} else {
+				fmt.Fprint(writer, "0 ")
+			}
+		}
+		fmt.Fprintln(writer)
+	}
+
+	writer.Flush()
+
+	return nil
 }
 
 func (pbm *PBM) Invert() {
-	// ...
+	for y, _ := range pbm.data {
+		for x, _ := range pbm.data[y] {
+			pbm.data[y][x] = !pbm.data[y][x];
+		}
+	}
 }
 
-func (pbm *PBM) Flip() {
+/*func (pbm *PBM) Flip() {
 	// ...
 }
 
