@@ -19,6 +19,20 @@ func main() {
 		fmt.Println("Error:", err)
 		return
 	}
+	
+	for y, _ := range image.data {
+		output := "";
+		for x, _ := range image.data[y] {
+			val := image.data[y][x];
+			if val {
+				output = output + "1";
+			} else {
+				output = output + "0";
+			}
+		}
+		fmt.Println(output);
+	}
+	fmt.Println("Done loading image");
 
 	width, height := image.Size()
 	fmt.Println("Image Size:", width, "x", height)
@@ -33,11 +47,9 @@ func ReadPBM(filename string) (*PBM, error) {
 		return nil, err
 	}
 	defer file.Close()
-
 	scanner := bufio.NewScanner(file)
-
 	pbm := &PBM{}
-
+	var row []bool
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "#") {
@@ -48,21 +60,30 @@ func ReadPBM(filename string) (*PBM, error) {
 		} else if pbm.width == 0 {
 			fmt.Sscanf(line, "%d %d", &pbm.width, &pbm.height)
 		} else {
-			var row []bool
 			for _, char := range line {
+				valid := false;
 				if char == '1' {
 					row = append(row, true)
+					valid = true;
 				} else if char == '0' {
 					row = append(row, false)
+					valid = true;
+				}
+				if valid {
+					if len(row) == pbm.width {
+						pbm.data = append(pbm.data, row)
+						row = []bool{};
+					}
 				}
 			}
-			pbm.data = append(pbm.data, row)
+			if len(pbm.data) == pbm.height {
+				break;
+			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
-
 	return pbm, nil
 }
 
