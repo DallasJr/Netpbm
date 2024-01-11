@@ -15,6 +15,40 @@ type PBM struct {
 }
 
 func main() {
+	image, err := ReadPPM("p3.ppm")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	fmt.Println("Done loading image");
+
+	image.Invert();
+	fmt.Println("Image inverted:")
+
+	image.Flip();
+	fmt.Println("Image flipped:")
+
+	image.Flop();
+	fmt.Println("Image flopped:")
+
+	image.Rotate90CW();
+	fmt.Println("Image rotated 90° clockwise:")
+
+	changed := image.ToPBM();
+
+	err = changed.Save("output.pbm")
+	if err != nil {
+		fmt.Println("Error saving the image:", err)
+		return
+	}
+	fmt.Println("Image saved successfully.")
+
+	err = image.Save("output.ppm")
+	if err != nil {
+		fmt.Println("Error saving the image:", err)
+		return
+	}
+	fmt.Println("Image saved successfully.")
 	/*image, err := ReadPGM("p2.pgm")
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -448,5 +482,183 @@ type Pixel struct{
 }
 
 func ReadPPM(filename string) (*PPM, error){
-    
+    file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	ppm := &PPM{}
+	for scanner.Scan() {
+		line := scanner.Text()
+		var row []Pixel
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+		if ppm.magicNumber == "" {
+			ppm.magicNumber = strings.TrimSpace(line)
+		} else if ppm.width == 0 {
+			fmt.Sscanf(line, "%d %d", &ppm.width, &ppm.height)
+		} else if ppm.max == 0 {
+			fmt.Sscanf(line, "%d", &ppm.max)
+		} else {
+			var pixel Pixel;
+			pcs := 0
+			for _, val := range strings.Split(line, " ") {
+				if val == "" {
+					continue
+				}
+				if ppm.magicNumber == "P3" {
+					num, _ := strconv.ParseUint(val, 10, 8)
+					if pcs == 0 {
+						pixel.R = uint8(num);
+						pcs++
+					} else if pcs == 1 {
+						pixel.G = uint8(num);
+						pcs++
+					} else {
+						pixel.B = uint8(num);
+						row = append(row, pixel);
+						pixel = Pixel{};
+						pcs = 0;
+					}
+				} else if ppm.magicNumber == "P5" {
+					
+				}
+				if len(row) == ppm.width {
+					ppm.data = append(ppm.data, row)
+					row = []Pixel{};
+				}
+			}
+			if len(ppm.data) == ppm.height {
+				fmt.Println("all finished")
+				break;
+			}
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return ppm, nil
+}
+
+func (ppm *PPM) Save(filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	writer := bufio.NewWriter(file)
+	fmt.Fprint(writer, ppm.magicNumber + "\n")
+	fmt.Fprintf(writer, "%d %d\n", ppm.width, ppm.height)
+	fmt.Fprintf(writer, "%d\n", ppm.max)
+	for _, row := range ppm.data {
+		for _, pixel := range row {
+			if ppm.magicNumber == "P3" {
+				fmt.Fprint(writer, strconv.Itoa(int(pixel.R)) + " " + strconv.Itoa(int(pixel.G)) + " " + strconv.Itoa(int(pixel.B)) + " ")
+			} else if ppm.magicNumber == "P5" {
+				
+			}
+		}
+		fmt.Fprintln(writer, "")
+	}
+	writer.Flush()
+	return nil
+}
+
+func (ppm *PPM) Size() (int, int) {
+	return ppm.width, ppm.height
+}
+
+func (ppm *PPM) Max() (int) {
+	return ppm.max
+}
+
+func (ppm *PPM) At(x, y int) Pixel{
+	return ppm.data[x][y]
+}
+
+func (ppm *PPM) Set(x, y int, value Pixel){
+	ppm.data[x][y] = value
+}
+
+func (ppm *PPM) Invert() {
+	for y, _ := range ppm.data {
+		for x, _ := range ppm.data[y] {
+			pixel := ppm.data[y][x];
+			pixel.R = uint8(255 - int(pixel.R));
+			pixel.G = uint8(255 - int(pixel.G));
+			pixel.B = uint8(255 - int(pixel.B));
+			ppm.data[y][x] = pixel
+		}
+	}
+}
+
+func (ppm *PPM) Flip() {
+	for y, _ := range ppm.data {
+		cursor := ppm.width - 1;
+		for x := 0; x < ppm.width; x++ {
+			temp := ppm.data[y][x];
+			ppm.data[y][x] = ppm.data[y][cursor];
+			ppm.data[y][cursor] = temp;
+			cursor--;
+			if cursor < x || cursor == x {
+				break;
+			}
+		}
+	}
+}
+
+func (ppm *PPM) Flop() {
+	cursor := ppm.height - 1;
+	for y, _ := range ppm.data {
+		temp := ppm.data[y];
+		ppm.data[y] = ppm.data[cursor];
+		ppm.data[cursor] = temp;
+		cursor--;
+		if cursor < y || cursor == y {
+			break;
+		}
+	}
+}
+
+func (ppm *PPM) SetMagicNumber(magicNumber string) {
+	ppm.magicNumber = magicNumber;
+}
+
+func (ppm *PPM) SetMaxValue(maxValue uint8) {
+	ppm.max = int(maxValue);
+}
+
+func (ppm *PPM) Rotate90CW() {
+    rotatedData := make([][]Pixel, ppm.width)
+    for i := range rotatedData {
+        rotatedData[i] = make([]Pixel, ppm.height)
+    }
+    for i := 0; i < ppm.width; i++ {
+        for j := 0; j < ppm.height; j++ {
+            rotatedData[i][j] = ppm.data[ppm.height-1-j][i]
+        }
+    }
+    ppm.width, ppm.height = ppm.height, ppm.width
+    ppm.data = rotatedData
+}
+
+func (ppm *PPM) ToPBM() *PBM{
+	pbm := &PBM{}
+	pbm.magicNumber = "P1";
+	pbm.height = ppm.height;
+	pbm.width = ppm.width;
+	for y, _ := range ppm.data {
+		pbm.data = append(pbm.data, []bool{})
+		for x, _ := range ppm.data[y] {
+			val := ppm.data[y][x];
+			if int(val.R) == 0 && int(val.G) == 0 && int(val.B) == 0 {
+				pbm.data[y] = append(pbm.data[y], true);
+			} else {
+				pbm.data[y] = append(pbm.data[y], false);
+			}
+		}
+	}
+	return pbm
 }
