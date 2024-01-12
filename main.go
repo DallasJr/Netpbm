@@ -17,14 +17,13 @@ type PBM struct {
 }
 
 func main() {
-	image, err := ReadPPM("p3.ppm")
+	/*image, err := ReadPPM("p3.ppm")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
-	fmt.Println("Done loading image");
-
-	image.Invert();
+	fmt.Println("Done loading image");*/
+	/*image.Invert();
 	fmt.Println("Image inverted:")
 
 	image.Flip();
@@ -42,9 +41,9 @@ func main() {
 	image.DrawLine(Point{12, 0}, Point{0, 12}, Pixel{0, 200, 0})
 
 	changed := image.ToPBM();
-	changedpgm := image.ToPGM();
+	changedpgm := image.ToPGM();*/
 
-	err = changedpgm.Save("output.pgm")
+	/*err = changedpgm.Save("output.pgm")
 	if err != nil {
 		fmt.Println("Error saving the image:", err)
 		return
@@ -56,14 +55,13 @@ func main() {
 		fmt.Println("Error saving the image:", err)
 		return
 	}
-	fmt.Println("Image saved successfully.")
-
-	err = image.Save("output.ppm")
+	fmt.Println("Image saved successfully.")*/
+	/*err = image.Save("output.ppm")
 	if err != nil {
 		fmt.Println("Error saving the image:", err)
 		return
 	}
-	fmt.Println("Image saved successfully.")
+	fmt.Println("Image saved successfully.")*/
 	/*image, err := ReadPGM("p2.pgm")
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -74,9 +72,9 @@ func main() {
 	fmt.Println("Magicnumber: " + image.magicNumber)
 	width, height := image.Size()
 	fmt.Println(width, "x", height)
-	fmt.Println("Max:", image.Max())
+	fmt.Println("Max:", image.Max())*/
 
-	image.Invert();
+	/*image.Invert();
 	fmt.Println("Image inverted:")
 
 	image.Flip();
@@ -95,26 +93,24 @@ func main() {
 		fmt.Println("Error saving the image:", err)
 		return
 	}
-	fmt.Println("Image saved successfully.")
-	err = image.Save("output.pgm")
+	fmt.Println("Image saved successfully.")*/
+	/*err = image.Save("output.pgm")
 	if err != nil {
 		fmt.Println("Error saving the image:", err)
 		return
 	}
 	fmt.Println("Image saved successfully.")*/
 
-	/*image, err := ReadPBM("p4.pbm")
+	image, err := ReadPBM("p1.pbm")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
-	
 	DisplayPBM(image);
 	fmt.Println("Done loading image");
 	width, height := image.Size()
 	fmt.Println(image.magicNumber, width, "x", height)
-
-	value := image.At(4, 0)
+	/*value := image.At(4, 0)
 	fmt.Println("Pixel value at (4, 0) is", value)
 
 	image.Set(4, 0, false);
@@ -133,16 +129,16 @@ func main() {
 
 	image.Flop();
 	fmt.Println("Image flopped:")
-	DisplayPBM(image);
+	DisplayPBM(image);*/
 
-	image.SetMagicNumber("P1");
+	image.SetMagicNumber("P4");
 
 	err = image.Save("output.pbm")
 	if err != nil {
 		fmt.Println("Error saving the image:", err)
 		return
 	}
-	fmt.Println("Image saved successfully.")*/
+	fmt.Println("Image saved successfully.")
 }
 
 func DisplayPBM(pbm *PBM) {
@@ -232,19 +228,25 @@ func (pbm *PBM) Save(filename string) error {
 	writer := bufio.NewWriter(file)
 	fmt.Fprint(writer, pbm.magicNumber + "\n")
 	fmt.Fprintf(writer, "%d %d\n", pbm.width, pbm.height)
-	for _, row := range pbm.data {
-		for _, pixel := range row {
+	for y, row := range pbm.data {
+		for i, pixel := range row {
 			if pbm.magicNumber == "P1" {
+				xtra := " ";
+				if i == len(row) - 1 {
+					xtra = "";
+				}
 				if pixel {
-					fmt.Fprint(writer, "1")
+					fmt.Fprint(writer, "1" + xtra)
 				} else {
-					fmt.Fprint(writer, "0")
+					fmt.Fprint(writer, "0" + xtra)
 				}
 			} else if pbm.magicNumber == "P4" {
 
 			}
 		}
-		fmt.Fprintln(writer, "")
+		if y != len(pbm.data) - 1 {
+			fmt.Fprintln(writer, "")
+		}
 	}
 	writer.Flush()
 	return nil
@@ -386,15 +388,21 @@ func (pgm *PGM) Save(filename string) error {
 	fmt.Fprint(writer, pgm.magicNumber + "\n")
 	fmt.Fprintf(writer, "%d %d\n", pgm.width, pgm.height)
 	fmt.Fprintf(writer, "%d\n", pgm.max)
-	for _, row := range pgm.data {
-		for _, pixel := range row {
+	for y, row := range pgm.data {
+		for i, pixel := range row {
 			if pgm.magicNumber == "P2" {
-				fmt.Fprint(writer, strconv.Itoa(int(pixel)) + " ")
+				xtra := " ";
+				if i == len(row) - 1 {
+					xtra = "";
+				}
+				fmt.Fprint(writer, strconv.Itoa(int(pixel)) + xtra)
 			} else if pgm.magicNumber == "P5" {
 				
 			}
 		}
-		fmt.Fprintln(writer, "")
+		if y != len(pgm.data) - 1 {
+			fmt.Fprintln(writer, "")
+		}
 	}
 	writer.Flush()
 	return nil
@@ -564,15 +572,21 @@ func (ppm *PPM) Save(filename string) error {
 	fmt.Fprint(writer, ppm.magicNumber + "\n")
 	fmt.Fprintf(writer, "%d %d\n", ppm.width, ppm.height)
 	fmt.Fprintf(writer, "%d\n", ppm.max)
-	for _, row := range ppm.data {
-		for _, pixel := range row {
+	for y, row := range ppm.data {
+		for i, pixel := range row {
 			if ppm.magicNumber == "P3" {
-				fmt.Fprint(writer, strconv.Itoa(int(pixel.R)) + " " + strconv.Itoa(int(pixel.G)) + " " + strconv.Itoa(int(pixel.B)) + " ")
+				xtra := " ";
+				if i == len(row) - 1 {
+					xtra = "";
+				}
+				fmt.Fprint(writer, strconv.Itoa(int(pixel.R)) + " " + strconv.Itoa(int(pixel.G)) + " " + strconv.Itoa(int(pixel.B)) + xtra)
 			} else if ppm.magicNumber == "P5" {
 				
 			}
 		}
-		fmt.Fprintln(writer, "")
+		if y != len(ppm.data) - 1 {
+			fmt.Fprintln(writer, "")
+		}
 	}
 	writer.Flush()
 	return nil
