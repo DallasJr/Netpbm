@@ -62,22 +62,22 @@ func main() {
 		return
 	}
 	fmt.Println("Image saved successfully.")*/
-	/*image, err := ReadPGM("p2.pgm")
+	image, err := ReadPBM("./testImages/pbm/testP4.pbm")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
 	fmt.Println("Done loading image");
-	DisplayPGM(image);
-	fmt.Println("Magicnumber: " + image.magicNumber)
+	/*DisplayPGM(image);
+	fmt.Println("Magicnumber: " + image.magicNumber)*/
 	width, height := image.Size()
 	fmt.Println(width, "x", height)
-	fmt.Println("Max:", image.Max())*/
-
+	DisplayPBM(image);
+	//fmt.Println("Max:", image.Max())
 	/*image.Invert();
-	fmt.Println("Image inverted:")
+	fmt.Println("Image inverted:")*/
 
-	image.Flip();
+	/*image.Flip();
 	fmt.Println("Image flipped:")
 
 	image.Flop();
@@ -86,14 +86,14 @@ func main() {
 	image.Rotate90CW();
 	fmt.Println("Image rotated 90° clockwise:")
 
-	changed := image.ToPBM();
-
-	err = changed.Save("output.pbm")
+	changed := image.ToPBM();*/
+	image.SetMagicNumber("P1")
+	err = image.Save("output.pbm")
 	if err != nil {
 		fmt.Println("Error saving the image:", err)
 		return
 	}
-	fmt.Println("Image saved successfully.")*/
+	fmt.Println("Image saved successfully.")
 	/*err = image.Save("output.pgm")
 	if err != nil {
 		fmt.Println("Error saving the image:", err)
@@ -101,7 +101,7 @@ func main() {
 	}
 	fmt.Println("Image saved successfully.")*/
 
-	image, err := ReadPBM("p1.pbm")
+	/*image, err := ReadPBM("p1.pbm")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -109,7 +109,7 @@ func main() {
 	DisplayPBM(image);
 	fmt.Println("Done loading image");
 	width, height := image.Size()
-	fmt.Println(image.magicNumber, width, "x", height)
+	fmt.Println(image.magicNumber, width, "x", height)*/
 	/*value := image.At(4, 0)
 	fmt.Println("Pixel value at (4, 0) is", value)
 
@@ -131,14 +131,14 @@ func main() {
 	fmt.Println("Image flopped:")
 	DisplayPBM(image);*/
 
-	image.SetMagicNumber("P4");
+	/*image.SetMagicNumber("P4");
 
 	err = image.Save("output.pbm")
 	if err != nil {
 		fmt.Println("Error saving the image:", err)
 		return
 	}
-	fmt.Println("Image saved successfully.")
+	fmt.Println("Image saved successfully.")*/
 }
 
 func DisplayPBM(pbm *PBM) {
@@ -166,6 +166,7 @@ func ReadPBM(filename string) (*PBM, error) {
 	scanner := bufio.NewScanner(file)
 	pbm := &PBM{}
 	var row []bool
+	var binaryData []byte
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.HasPrefix(line, "#") {
@@ -176,28 +177,56 @@ func ReadPBM(filename string) (*PBM, error) {
 		} else if pbm.width == 0 {
 			fmt.Sscanf(line, "%d %d", &pbm.width, &pbm.height)
 		} else {
-			for _, char := range line {
-				valid := false;
+			/*for _, char := range line {
 				if pbm.magicNumber == "P1" {
 					if char == '1' {
 						row = append(row, true)
-						valid = true;
 					} else if char == '0' {
 						row = append(row, false)
-						valid = true;
 					}
 				} else if pbm.magicNumber == "P4" {
-					
+					binaryData = append(binaryData, []byte(line)...)
 				}
-				if valid {
-					if len(row) == pbm.width {
-						pbm.data = append(pbm.data, row)
-						row = []bool{};
-					}
+				if len(row) == pbm.width {
+					pbm.data = append(pbm.data, row)
+					row = []bool{};
 				}
 			}
 			if len(pbm.data) == pbm.height {
 				break;
+			}*/
+			if pbm.magicNumber == "P1" {
+				for _, char := range line {
+					if char == '1' {
+						row = append(row, true)
+					} else if char == '0' {
+						row = append(row, false)
+					}
+				}
+			} else if pbm.magicNumber == "P4" {
+				binaryData = append(binaryData, []byte(line)...)
+			}
+
+			if len(row) == pbm.width {
+				pbm.data = append(pbm.data, row)
+				row = []bool{}
+			}
+
+			if len(pbm.data) == pbm.height {
+				break
+			}
+		}
+	}
+	if pbm.magicNumber == "P4" {
+		for _, b := range binaryData {
+			for i := 7; i >= 0; i-- {
+				bit := (b >> uint(i)) & 1
+				row = append(row, bit == 1)
+	
+				if len(row) == pbm.width {
+					pbm.data = append(pbm.data, row)
+					row = []bool{}
+				}
 			}
 		}
 	}
@@ -412,14 +441,7 @@ func (pgm *PGM) Invert() {
 	for y, _ := range pgm.data {
 		for x, _ := range pgm.data[y] {
 			prevvalue := int(pgm.data[y][x]);
-			mid := pgm.max / 2;
-			newvalue := 0; 
-			if prevvalue > mid {
-				newvalue = mid - (prevvalue - mid)
-			} else {
-				newvalue = mid + (mid - prevvalue)
-			}
-			pgm.data[y][x] = uint8(newvalue);
+			pgm.data[y][x] = uint8(pgm.max - prevvalue);
 		}
 	}
 }
@@ -457,6 +479,13 @@ func (pgm *PGM) SetMagicNumber(magicNumber string) {
 }
 
 func (pgm *PGM) SetMaxValue(maxValue uint8) {
+	for y, _ := range pgm.data {
+		for x, _ := range pgm.data[y] {
+			prevvalue := int(pgm.data[y][x]);
+			newvalue := uint8(float64(prevvalue)/float64(maxValue)*255)
+			pgm.data[y][x] = newvalue;
+		}
+	}
 	pgm.max = int(maxValue);
 }
 
