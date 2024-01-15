@@ -177,24 +177,6 @@ func ReadPBM(filename string) (*PBM, error) {
 		} else if pbm.width == 0 {
 			fmt.Sscanf(line, "%d %d", &pbm.width, &pbm.height)
 		} else {
-			/*for _, char := range line {
-				if pbm.magicNumber == "P1" {
-					if char == '1' {
-						row = append(row, true)
-					} else if char == '0' {
-						row = append(row, false)
-					}
-				} else if pbm.magicNumber == "P4" {
-					binaryData = append(binaryData, []byte(line)...)
-				}
-				if len(row) == pbm.width {
-					pbm.data = append(pbm.data, row)
-					row = []bool{};
-				}
-			}
-			if len(pbm.data) == pbm.height {
-				break;
-			}*/
 			if pbm.magicNumber == "P1" {
 				for _, char := range line {
 					if char == '1' {
