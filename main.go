@@ -17,76 +17,15 @@ type PBM struct {
 }
 
 func main() {
-	/*image, err := ReadPPM("p3.ppm")
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	fmt.Println("Done loading image");*/
-	/*image.Invert();
-	fmt.Println("Image inverted:")
-
-	image.Flip();
-	fmt.Println("Image flipped:")
-
-	image.Flop();
-	fmt.Println("Image flopped:")
-
-	image.Rotate90CW();
-	fmt.Println("Image rotated 90° clockwise:")
-
-	image.DrawTriangle(Point{0, 0}, Point{4, 0}, Point{4, 4}, Pixel{200, 200, 200})
-	image.DrawCircle(Point{9, 9}, 4, Pixel{100, 100, 100})
-	image.DrawRectangle(Point{6, 4}, 3, 3, Pixel{120, 120, 0})
-	image.DrawLine(Point{12, 0}, Point{0, 12}, Pixel{0, 200, 0})
-
-	changed := image.ToPBM();
-	changedpgm := image.ToPGM();*/
-
-	/*err = changedpgm.Save("output.pgm")
-	if err != nil {
-		fmt.Println("Error saving the image:", err)
-		return
-	}
-	fmt.Println("Image saved successfully.")
-
-	err = changed.Save("output.pbm")
-	if err != nil {
-		fmt.Println("Error saving the image:", err)
-		return
-	}
-	fmt.Println("Image saved successfully.")*/
-	/*err = image.Save("output.ppm")
-	if err != nil {
-		fmt.Println("Error saving the image:", err)
-		return
-	}
-	fmt.Println("Image saved successfully.")*/
 	image, err := ReadPBM("./testImages/pbm/testP4.pbm")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
 	fmt.Println("Done loading image");
-	/*DisplayPGM(image);
-	fmt.Println("Magicnumber: " + image.magicNumber)*/
 	width, height := image.Size()
 	fmt.Println(width, "x", height)
 	DisplayPBM(image);
-	//fmt.Println("Max:", image.Max())
-	/*image.Invert();
-	fmt.Println("Image inverted:")*/
-
-	/*image.Flip();
-	fmt.Println("Image flipped:")
-
-	image.Flop();
-	fmt.Println("Image flopped:")
-
-	image.Rotate90CW();
-	fmt.Println("Image rotated 90° clockwise:")
-
-	changed := image.ToPBM();*/
 	image.SetMagicNumber("P1")
 	err = image.Save("output.pbm")
 	if err != nil {
@@ -94,51 +33,6 @@ func main() {
 		return
 	}
 	fmt.Println("Image saved successfully.")
-	/*err = image.Save("output.pgm")
-	if err != nil {
-		fmt.Println("Error saving the image:", err)
-		return
-	}
-	fmt.Println("Image saved successfully.")*/
-
-	/*image, err := ReadPBM("p1.pbm")
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	DisplayPBM(image);
-	fmt.Println("Done loading image");
-	width, height := image.Size()
-	fmt.Println(image.magicNumber, width, "x", height)*/
-	/*value := image.At(4, 0)
-	fmt.Println("Pixel value at (4, 0) is", value)
-
-	image.Set(4, 0, false);
-	fmt.Println("Pixel value at (4, 0) changed to false")
-	image.Set(4, 4, false);
-	fmt.Println("Pixel value at (4, 4) changed to false")
-	DisplayPBM(image);
-
-	image.Invert();
-	fmt.Println("Image inverted:")
-	DisplayPBM(image);
-
-	image.Flip();
-	fmt.Println("Image flipped:")
-	DisplayPBM(image);
-
-	image.Flop();
-	fmt.Println("Image flopped:")
-	DisplayPBM(image);*/
-
-	/*image.SetMagicNumber("P4");
-
-	err = image.Save("output.pbm")
-	if err != nil {
-		fmt.Println("Error saving the image:", err)
-		return
-	}
-	fmt.Println("Image saved successfully.")*/
 }
 
 func DisplayPBM(pbm *PBM) {
