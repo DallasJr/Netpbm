@@ -1,4 +1,4 @@
-package main
+package Netbpm
 
 import (
 	"bufio"
@@ -14,25 +14,6 @@ type PBM struct {
 	data          [][]bool
 	width, height int
 	magicNumber   string
-}
-
-func main() {
-	image, err := ReadPBM("./testImages/pbm/testP4.pbm")
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	fmt.Println("Done loading image");
-	width, height := image.Size()
-	fmt.Println(width, "x", height)
-	DisplayPBM(image);
-	image.SetMagicNumber("P1")
-	err = image.Save("output.pbm")
-	if err != nil {
-		fmt.Println("Error saving the image:", err)
-		return
-	}
-	fmt.Println("Image saved successfully.")
 }
 
 func DisplayPBM(pbm *PBM) {
@@ -52,62 +33,55 @@ func DisplayPBM(pbm *PBM) {
 }
 
 func ReadPBM(filename string) (*PBM, error) {
-	file, err := os.Open(filename)
+	file, err := os.Open(filename);
 	if err != nil {
-		return nil, err
+		return nil, err;
 	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	pbm := &PBM{}
-	var row []bool
-	var binaryData []byte
+	defer file.Close();
+	scanner := bufio.NewScanner(file);
+	pbm := &PBM{};
+	line := 0;
 	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "#") {
+		text := scanner.Text();
+		if text == "" || strings.HasPrefix(text, "#") {
 			continue
 		}
 		if pbm.magicNumber == "" {
-			pbm.magicNumber = strings.TrimSpace(line)
+			pbm.magicNumber = strings.TrimSpace(text);
 		} else if pbm.width == 0 {
-			fmt.Sscanf(line, "%d %d", &pbm.width, &pbm.height)
+			fmt.Sscanf(text, "%d %d", &pbm.width, &pbm.height);
+			pbm.data = make([][]bool, pbm.height);
+			for i := range pbm.data {
+				pbm.data[i] = make([]bool, pbm.width);
+			}
 		} else {
 			if pbm.magicNumber == "P1" {
-				for _, char := range line {
-					if char == '1' {
-						row = append(row, true)
-					} else if char == '0' {
-						row = append(row, false)
-					}
+				test := strings.Fields(text);
+				for i := 0; i < pbm.width; i++ {
+					pbm.data[line][i] = test[i] == "1";
 				}
+				line++
 			} else if pbm.magicNumber == "P4" {
-				binaryData = append(binaryData, []byte(line)...)
-			}
-
-			if len(row) == pbm.width {
-				pbm.data = append(pbm.data, row)
-				row = []bool{}
-			}
-
-			if len(pbm.data) == pbm.height {
-				break
-			}
-		}
-	}
-	if pbm.magicNumber == "P4" {
-		for _, b := range binaryData {
-			for i := 7; i >= 0; i-- {
-				bit := (b >> uint(i)) & 1
-				row = append(row, bit == 1)
-	
-				if len(row) == pbm.width {
-					pbm.data = append(pbm.data, row)
-					row = []bool{}
+				expectedBytesPerRow := (pbm.width + 7) / 8;
+				totalExpectedBytes := expectedBytesPerRow * pbm.height;
+				allPixelData := make([]byte, totalExpectedBytes);
+				fileContent, err := os.ReadFile(filename);
+				if err != nil {
+					return nil, fmt.Errorf("couldn't read file: %v", err);
+				}
+				copy(allPixelData, fileContent[len(fileContent)-totalExpectedBytes:]);
+				byteIndex := 0;
+				for y := 0; y < pbm.height; y++ {
+					for x := 0; x < pbm.width; x++ {
+						if x%8 == 0 && x != 0 {
+							byteIndex++;
+						}
+						pbm.data[y][x] = (allPixelData[byteIndex]>>(7-(x%8)))&1 != 0;
+					}
+					byteIndex++;
 				}
 			}
 		}
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
 	}
 	return pbm, nil
 }
@@ -133,9 +107,10 @@ func (pbm *PBM) Save(filename string) error {
 	writer := bufio.NewWriter(file)
 	fmt.Fprint(writer, pbm.magicNumber + "\n")
 	fmt.Fprintf(writer, "%d %d\n", pbm.width, pbm.height)
-	for y, row := range pbm.data {
-		for i, pixel := range row {
-			if pbm.magicNumber == "P1" {
+	writer.Flush();
+	if pbm.magicNumber == "P1" {
+		for y, row := range pbm.data {
+			for i, pixel := range row {
 				xtra := " ";
 				if i == len(row) - 1 {
 					xtra = "";
@@ -145,15 +120,29 @@ func (pbm *PBM) Save(filename string) error {
 				} else {
 					fmt.Fprint(writer, "0" + xtra)
 				}
-			} else if pbm.magicNumber == "P4" {
-
+			}
+			if y != len(pbm.data) - 1 {
+				fmt.Fprintln(writer, "")
 			}
 		}
-		if y != len(pbm.data) - 1 {
-			fmt.Fprintln(writer, "")
-		}
-	}
-	writer.Flush()
+		writer.Flush();
+	} else if pbm.magicNumber == "P4" {
+        for _, row := range pbm.data {
+            for x := 0; x < pbm.width; x += 8 {
+                var byteValue byte;
+                for i := 0; i < 8 && x+i < pbm.width; i++ {
+                    bitIndex := 7 - i;
+                    if row[x+i] {
+                        byteValue |= 1 << bitIndex;
+                    }
+                }
+                _, err = file.Write([]byte{byteValue})
+                if err != nil {
+                    return fmt.Errorf("error writing pixel data: %v", err)
+                }
+            }
+        }
+    }
 	return nil
 }
 
@@ -201,7 +190,7 @@ type PGM struct {
 	data          [][]uint8
 	width, height int
 	magicNumber   string
-	max           int
+	max           uint8
 }
 
 func ReadPGM(filename string) (*PGM, error) {
@@ -212,41 +201,46 @@ func ReadPGM(filename string) (*PGM, error) {
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 	pgm := &PGM{}
-	var row []uint8
+	line := 0;
 	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "#") {
+		text := scanner.Text()
+		if strings.HasPrefix(text, "#") {
 			continue
 		}
 		if pgm.magicNumber == "" {
-			pgm.magicNumber = strings.TrimSpace(line)
+			pgm.magicNumber = strings.TrimSpace(text)
 		} else if pgm.width == 0 {
-			fmt.Sscanf(line, "%d %d", &pgm.width, &pgm.height)
-		} else if pgm.max == 0 {
-			fmt.Sscanf(line, "%d", &pgm.max)
-		} else {
-			for _, val := range strings.Split(line, " ") {
-				if val == "" {
-					continue
-				}
-				if pgm.magicNumber == "P2" {
-					num, _ := strconv.ParseUint(val, 10, 8)
-					row = append(row, uint8(num));
-				} else if pgm.magicNumber == "P5" {
-					
-				}
-				if len(row) == pgm.width {
-					pgm.data = append(pgm.data, row)
-					row = []uint8{};
-				}
+			fmt.Sscanf(text, "%d %d", &pgm.width, &pgm.height)
+			pgm.data = make([][]uint8, pgm.height);
+			for i := range pgm.data {
+				pgm.data[i] = make([]uint8, pgm.width);
 			}
-			if len(pgm.data) == pgm.height {
-				break;
+		} else if pgm.max == 0 {
+			fmt.Sscanf(text, "%d", &pgm.max)
+		} else {
+			if pgm.magicNumber == "P2" {
+				val := strings.Fields(text);
+				for i := 0; i < pgm.width; i++ {
+					num, _ := strconv.ParseUint(val[i], 10, 8)
+					pgm.data[line][i] = uint8(num);
+				}
+				line++
+			} else if pgm.magicNumber == "P5" {
+				pixelData := make([]uint8, pgm.width*pgm.height)
+                fileContent, err := os.ReadFile(filename)
+                if err != nil {
+                    return nil, fmt.Errorf("couldn't read file: %v", err)
+                }
+                copy(pixelData, fileContent[len(fileContent)-(pgm.width*pgm.height):])
+                pixelIndex := 0
+                for y := 0; y < pgm.height; y++ {
+                    for x := 0; x < pgm.width; x++ {
+                        pgm.data[y][x] = pixelData[pixelIndex]
+                        pixelIndex++
+                    }
+                }
 			}
 		}
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
 	}
 	return pgm, nil
 }
@@ -271,7 +265,7 @@ func (pgm *PGM) Size() (int, int) {
 	return pgm.width, pgm.height
 }
 
-func (pgm *PGM) Max() (int) {
+func (pgm *PGM) Max() (uint8) {
 	return pgm.max
 }
 
@@ -293,31 +287,39 @@ func (pgm *PGM) Save(filename string) error {
 	fmt.Fprint(writer, pgm.magicNumber + "\n")
 	fmt.Fprintf(writer, "%d %d\n", pgm.width, pgm.height)
 	fmt.Fprintf(writer, "%d\n", pgm.max)
-	for y, row := range pgm.data {
-		for i, pixel := range row {
-			if pgm.magicNumber == "P2" {
+	writer.Flush();
+	if pgm.magicNumber == "P2" {
+		for y, row := range pgm.data {
+			for i, pixel := range row {
 				xtra := " ";
 				if i == len(row) - 1 {
 					xtra = "";
 				}
 				fmt.Fprint(writer, strconv.Itoa(int(pixel)) + xtra)
-			} else if pgm.magicNumber == "P5" {
-				
+			}
+			if y != len(pgm.data) - 1 {
+				fmt.Fprintln(writer, "")
 			}
 		}
-		if y != len(pgm.data) - 1 {
-			fmt.Fprintln(writer, "")
-		}
-	}
-	writer.Flush()
+		writer.Flush();
+	} else if pgm.magicNumber == "P5" {
+        for _, row := range pgm.data {
+            for _, pixel := range row {
+                _, err = file.Write([]byte{pixel})
+                if err != nil {
+                    return fmt.Errorf("error writing pixel data: %v", err)
+                }
+            }
+        }
+    }
 	return nil
 }
 
 func (pgm *PGM) Invert() {
 	for y, _ := range pgm.data {
 		for x, _ := range pgm.data[y] {
-			prevvalue := int(pgm.data[y][x]);
-			pgm.data[y][x] = uint8(pgm.max - prevvalue);
+			prevvalue := pgm.data[y][x];
+			pgm.data[y][x] = pgm.max - prevvalue;
 		}
 	}
 }
@@ -357,12 +359,12 @@ func (pgm *PGM) SetMagicNumber(magicNumber string) {
 func (pgm *PGM) SetMaxValue(maxValue uint8) {
 	for y, _ := range pgm.data {
 		for x, _ := range pgm.data[y] {
-			prevvalue := int(pgm.data[y][x]);
-			newvalue := uint8(float64(prevvalue)/float64(maxValue)*255)
+			prevvalue := pgm.data[y][x];
+			newvalue := prevvalue*uint8(5)/pgm.max
 			pgm.data[y][x] = newvalue;
 		}
 	}
-	pgm.max = int(maxValue);
+	pgm.max = maxValue;
 }
 
 func (pgm *PGM) Rotate90CW() {
@@ -388,7 +390,7 @@ func (pgm *PGM) ToPBM() *PBM {
 		pbm.data = append(pbm.data, []bool{})
 		for x, _ := range pgm.data[y] {
 			grayValue := pgm.data[y][x]
-			isBlack := int(grayValue) < pgm.max/2
+			isBlack := grayValue < pgm.max/2
 			pbm.data[y] = append(pbm.data[y], isBlack)
 		}
 	}
@@ -399,7 +401,7 @@ type PPM struct{
     data [][]Pixel
     width, height int
     magicNumber string
-    max int
+    max uint8
 }
 
 type Pixel struct{
@@ -414,55 +416,50 @@ func ReadPPM(filename string) (*PPM, error){
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 	ppm := &PPM{}
+	line := 0;
 	for scanner.Scan() {
-		line := scanner.Text()
-		var row []Pixel
-		if strings.HasPrefix(line, "#") {
+		text := scanner.Text()
+		if strings.HasPrefix(text, "#") {
 			continue
 		}
 		if ppm.magicNumber == "" {
-			ppm.magicNumber = strings.TrimSpace(line)
+			ppm.magicNumber = strings.TrimSpace(text)
 		} else if ppm.width == 0 {
-			fmt.Sscanf(line, "%d %d", &ppm.width, &ppm.height)
+			fmt.Sscanf(text, "%d %d", &ppm.width, &ppm.height)
+			ppm.data = make([][]Pixel, ppm.height);
+			for i := range ppm.data {
+				ppm.data[i] = make([]Pixel, ppm.width);
+			}
 		} else if ppm.max == 0 {
-			fmt.Sscanf(line, "%d", &ppm.max)
+			fmt.Sscanf(text, "%d", &ppm.max)
 		} else {
-			var pixel Pixel;
-			pcs := 0
-			for _, val := range strings.Split(line, " ") {
-				if val == "" {
-					continue
-				}
-				if ppm.magicNumber == "P3" {
-					num, _ := strconv.ParseUint(val, 10, 8)
-					if pcs == 0 {
-						pixel.R = uint8(num);
-						pcs++
-					} else if pcs == 1 {
-						pixel.G = uint8(num);
-						pcs++
-					} else {
-						pixel.B = uint8(num);
-						row = append(row, pixel);
-						pixel = Pixel{};
-						pcs = 0;
-					}
-				} else if ppm.magicNumber == "P5" {
-					
-				}
-				if len(row) == ppm.width {
-					ppm.data = append(ppm.data, row)
-					row = []Pixel{};
-				}
-			}
-			if len(ppm.data) == ppm.height {
-				fmt.Println("all finished")
-				break;
-			}
+			if ppm.magicNumber == "P3" {
+                val := strings.Fields(text)
+                for i := 0; i < ppm.width; i++ {
+                    r, _ := strconv.ParseUint(val[i*3], 10, 8)
+                    g, _ := strconv.ParseUint(val[i*3+1], 10, 8)
+                    b, _ := strconv.ParseUint(val[i*3+2], 10, 8)
+                    ppm.data[line][i] = Pixel{R: uint8(r), G: uint8(g), B: uint8(b)}
+                }
+                line++
+            } else if ppm.magicNumber == "P6" {
+                pixelData := make([]byte, ppm.width*ppm.height*3)
+                fileContent, err := os.ReadFile(filename)
+                if err != nil {
+                    return nil, fmt.Errorf("couldn't read file: %v", err)
+                }
+                copy(pixelData, fileContent[len(fileContent)-(ppm.width*ppm.height*3):])
+                pixelIndex := 0
+                for y := 0; y < ppm.height; y++ {
+                    for x := 0; x < ppm.width; x++ {
+                        ppm.data[y][x].R = pixelData[pixelIndex]
+                        ppm.data[y][x].G = pixelData[pixelIndex+1]
+                        ppm.data[y][x].B = pixelData[pixelIndex+2]
+                        pixelIndex += 3
+                    }
+                }
+            }
 		}
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
 	}
 	return ppm, nil
 }
@@ -477,23 +474,31 @@ func (ppm *PPM) Save(filename string) error {
 	fmt.Fprint(writer, ppm.magicNumber + "\n")
 	fmt.Fprintf(writer, "%d %d\n", ppm.width, ppm.height)
 	fmt.Fprintf(writer, "%d\n", ppm.max)
-	for y, row := range ppm.data {
-		for i, pixel := range row {
-			if ppm.magicNumber == "P3" {
-				xtra := " ";
-				if i == len(row) - 1 {
-					xtra = "";
-				}
-				fmt.Fprint(writer, strconv.Itoa(int(pixel.R)) + " " + strconv.Itoa(int(pixel.G)) + " " + strconv.Itoa(int(pixel.B)) + xtra)
-			} else if ppm.magicNumber == "P5" {
-				
-			}
-		}
-		if y != len(ppm.data) - 1 {
-			fmt.Fprintln(writer, "")
-		}
-	}
-	writer.Flush()
+	writer.Flush();
+	if ppm.magicNumber == "P3" {
+        for y, row := range ppm.data {
+            for i, pixel := range row {
+                xtra := " "
+                if i == len(row)-1 {
+                    xtra = ""
+                }
+                fmt.Fprintf(writer, "%d %d %d%s", pixel.R, pixel.G, pixel.B, xtra)
+            }
+            if y != len(ppm.data)-1 {
+                fmt.Fprintln(writer, "")
+            }
+        }
+        writer.Flush()
+    } else if ppm.magicNumber == "P6" {
+        for _, row := range ppm.data {
+            for _, pixel := range row {
+                _, err = file.Write([]byte{pixel.R, pixel.G, pixel.B})
+                if err != nil {
+                    return fmt.Errorf("error writing pixel data: %v", err)
+                }
+            }
+        }
+    }
 	return nil
 }
 
@@ -501,12 +506,12 @@ func (ppm *PPM) Size() (int, int) {
 	return ppm.width, ppm.height
 }
 
-func (ppm *PPM) Max() (int) {
+func (ppm *PPM) Max() (uint8) {
 	return ppm.max
 }
 
 func (ppm *PPM) At(x, y int) Pixel{
-	return ppm.data[x][y]
+	return ppm.data[y][x]
 }
 
 func (ppm *PPM) Set(x, y int, value Pixel){
@@ -520,7 +525,7 @@ func (ppm *PPM) Invert() {
 			pixel.R = uint8(255 - int(pixel.R));
 			pixel.G = uint8(255 - int(pixel.G));
 			pixel.B = uint8(255 - int(pixel.B));
-			ppm.data[y][x] = pixel
+			ppm.data[y][x] = pixel;
 		}
 	}
 }
@@ -558,7 +563,16 @@ func (ppm *PPM) SetMagicNumber(magicNumber string) {
 }
 
 func (ppm *PPM) SetMaxValue(maxValue uint8) {
-	ppm.max = int(maxValue);
+	for y, _ := range ppm.data {
+		for x, _ := range ppm.data[y] {
+			pixel := ppm.data[y][x];
+			pixel.R = uint8(float64(pixel.R)*float64(maxValue)/float64(ppm.max));
+			pixel.G = uint8(float64(pixel.G)*float64(maxValue)/float64(ppm.max));
+			pixel.B = uint8(float64(pixel.B)*float64(maxValue)/float64(ppm.max));
+			ppm.data[y][x] = pixel
+		}
+	}
+	ppm.max = maxValue;
 }
 
 func (ppm *PPM) Rotate90CW() {
@@ -584,8 +598,7 @@ func (ppm *PPM) ToPBM() *PBM{
 		pbm.data = append(pbm.data, []bool{})
 		for x, _ := range ppm.data[y] {
 			r, g, b := ppm.data[y][x].R, ppm.data[y][x].G, ppm.data[y][x].B
-			grayValue := 0.299*float64(r) + 0.587*float64(g) + 0.114*float64(b)
-			isBlack := grayValue < 128
+			isBlack := (uint8((int(r)+int(g)+int(b))/3) > ppm.max/2)
 			pbm.data[y] = append(pbm.data[y], isBlack)
 		}
 	}
@@ -602,7 +615,7 @@ func (ppm *PPM) ToPGM() *PGM{
 		pgm.data = append(pgm.data, []uint8{})
 		for x, _ := range ppm.data[y] {
 			r, g, b := ppm.data[y][x].R, ppm.data[y][x].G, ppm.data[y][x].B
-			grayValue := int(0.299*float64(r) + 0.587*float64(g) + 0.114*float64(b))
+			grayValue := uint8((int(r)+int(g)+int(b))/3)
 			pgm.data[y] = append(pgm.data[y], uint8(grayValue))
 		}
 	}
@@ -613,36 +626,46 @@ type Point struct{
     X, Y int
 }
 
+
+// Bresenham's Line Drawing Algorithm
 func (ppm *PPM) DrawLine(p1, p2 Point, color Pixel) {
-    dx := int(math.Abs(float64(p2.X - p1.X)))
-    dy := int(math.Abs(float64(p2.Y - p1.Y)))
-    var sx, sy int
-    if p1.X < p2.X {
-        sx = 1
-    } else {
-        sx = -1
-    }
-    if p1.Y < p2.Y {
-        sy = 1
-    } else {
-        sy = -1
-    }
-    err := dx - dy
+    deltaX := abs(p2.X - p1.X)
+    deltaY := abs(p2.Y - p1.Y)
+    sx, sy := sign(p2.X-p1.X), sign(p2.Y-p1.Y)
+    err := deltaX - deltaY
     for {
-        ppm.data[p1.Y][p1.X] = color
+        if (p1.X >= 0 && p1.X < ppm.width && p1.Y >= 0 && p1.Y < ppm.height) {
+            ppm.data[p1.Y][p1.X] = color
+        }
         if p1.X == p2.X && p1.Y == p2.Y {
             break
         }
         e2 := 2 * err
-        if e2 > -dy {
-            err -= dy
+        if e2 > -deltaY {
+            err -= deltaY
             p1.X += sx
         }
-        if e2 < dx {
-            err += dx
+        if e2 < deltaX {
+            err += deltaX
             p1.Y += sy
         }
     }
+}
+
+func abs(x int) int {
+    if x < 0 {
+        return -x
+    }
+    return x
+}
+
+func sign(x int) int {
+    if x > 0 {
+        return 1
+    } else if x < 0 {
+        return -1
+    }
+    return 0
 }
 
 func (ppm *PPM) DrawRectangle(p1 Point, width, height int, color Pixel) {
