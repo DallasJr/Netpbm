@@ -688,27 +688,16 @@ func (ppm *PPM) DrawFilledRectangle(p1 Point, width, height int, color Pixel) {
 }
 
 func (ppm *PPM) DrawCircle(center Point, radius int, color Pixel) {
-    x := radius
-    y := 0
-    err := 0
-    for x >= y {
-        ppm.data[center.Y+y][center.X+x] = color
-        ppm.data[center.Y+x][center.X+y] = color
-        ppm.data[center.Y+x][center.X-y] = color
-        ppm.data[center.Y+y][center.X-x] = color
-        ppm.data[center.Y-y][center.X-x] = color
-        ppm.data[center.Y-x][center.X-y] = color
-        ppm.data[center.Y-x][center.X+y] = color
-        ppm.data[center.Y-y][center.X+x] = color
-        y++
-        if err <= 0 {
-            err += 2*y + 1
-        }
-        if err > 0 {
-            x--
-            err -= 2*x + 1
-        }
-    }
+	for y := 0; y < ppm.height; y++ {
+		for x := 0; x < ppm.width; x++ {
+			dx := float64(x - center.X)
+			dy := float64(y - center.Y)
+			distance := math.Sqrt(dx*dx + dy*dy)
+			if math.Abs(distance-float64(radius-1)) < 0.5 {
+				ppm.data[y][x] = color
+			}
+		}
+	}
 }
 
 func (ppm *PPM) DrawFilledCircle(center Point, radius int, color Pixel) {
@@ -732,16 +721,7 @@ func (ppm *PPM) DrawTriangle(p1, p2, p3 Point, color Pixel) {
 }
 
 func (ppm *PPM) DrawFilledTriangle(p1, p2, p3 Point, color Pixel) {
-    minY := min(p1.Y, min(p2.Y, p3.Y))
-    maxY := max(p1.Y, max(p2.Y, p3.Y))
-    for y := minY; y <= maxY; y++ {
-        x1, x2 := interpolate(p1, p2, p3, y)
-        for x := x1; x <= x2; x++ {
-            if x >= 0 && x < ppm.width && y >= 0 && y < ppm.height {
-                ppm.data[y][x] = color
-            }
-        }
-    }
+
 }
 
 func (ppm *PPM) DrawPolygon(points []Point, color Pixel) {
