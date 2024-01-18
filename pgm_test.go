@@ -1,4 +1,4 @@
-package Netbpm
+package Netpbm
 
 import (
 	"os"
@@ -132,7 +132,7 @@ func TestReadPGM(t *testing.T) {
 		x := i % imageWidth
 		y := i / imageWidth
 		if pgm.data[y][x] != testData[i] {
-			t.Errorf("Pixel at (%d, %d) not read correctly %d %d", x, y, pgm.data[y][x], testData[i])
+			t.Errorf("Pixel at (%d, %d) not read correctly", x, y)
 		}
 	}
 }

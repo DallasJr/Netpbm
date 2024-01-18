@@ -1,4 +1,4 @@
-package Netbpm
+package Netpbm
 
 import (
 	"bufio"
@@ -598,7 +598,7 @@ func (ppm *PPM) ToPBM() *PBM{
 		pbm.data = append(pbm.data, []bool{})
 		for x, _ := range ppm.data[y] {
 			r, g, b := ppm.data[y][x].R, ppm.data[y][x].G, ppm.data[y][x].B
-			isBlack := (uint8((int(r)+int(g)+int(b))/3) > ppm.max/2)
+			isBlack := (uint8((int(r)+int(g)+int(b))/3) < ppm.max/2)
 			pbm.data[y] = append(pbm.data[y], isBlack)
 		}
 	}
@@ -669,9 +669,9 @@ func sign(x int) int {
 }
 
 func (ppm *PPM) DrawRectangle(p1 Point, width, height int, color Pixel) {
-    p2 := Point{p1.X + width - 1, p1.Y}
-    p3 := Point{p1.X, p1.Y + height - 1}
-    p4 := Point{p1.X + width - 1, p1.Y + height - 1}
+    p2 := Point{p1.X + width , p1.Y}
+    p3 := Point{p1.X, p1.Y + height }
+    p4 := Point{p1.X + width , p1.Y + height }
     ppm.DrawLine(p1, p2, color)
     ppm.DrawLine(p2, p4, color)
     ppm.DrawLine(p4, p3, color)
@@ -679,11 +679,12 @@ func (ppm *PPM) DrawRectangle(p1 Point, width, height int, color Pixel) {
 }
 
 func (ppm *PPM) DrawFilledRectangle(p1 Point, width, height int, color Pixel) {
-    for y := p1.Y; y < p1.Y+height; y++ {
-        for x := p1.X; x < p1.X+width; x++ {
-            ppm.data[y][x] = color
-        }
-    }
+	p2 := Point{p1.X + width, p1.Y}
+	for i := 0; i <= height; i++ {
+		ppm.DrawLine(p1, p2, color);
+		p1.Y++;
+		p2.Y++;
+	}
 }
 
 func (ppm *PPM) DrawCircle(center Point, radius int, color Pixel) {

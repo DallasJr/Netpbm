@@ -1,4 +1,4 @@
-package Netbpm
+package Netpbm
 
 import (
 	"os"
