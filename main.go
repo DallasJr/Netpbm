@@ -15,22 +15,6 @@ type PBM struct {
 	magicNumber   string
 }
 
-func DisplayPBM(pbm *PBM) {
-	for y, _ := range pbm.data {
-		output := "";
-		for x, _ := range pbm.data[y] {
-			val := pbm.data[y][x];
-			if val {
-				output = output + "■ ";
-			} else {
-				output = output + "□ ";
-			}
-		}
-		fmt.Println(output);
-	}
-	fmt.Println("");
-}
-
 func ReadPBM(filename string) (*PBM, error) {
 	file, err := os.Open(filename);
 	if err != nil {
