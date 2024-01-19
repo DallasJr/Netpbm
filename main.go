@@ -457,7 +457,7 @@ type Pixel struct{
 	R, G, B uint8
 }
 
-func ReadPPM(filename string) (*PPM, error){
+func ReadPPM(filename string) (*PPM, error) {
 	//Same as ReadPGM
 	file, err := os.Open(filename);
 	if err != nil {
@@ -573,7 +573,7 @@ func (ppm *PPM) At(x, y int) Pixel{
 	return ppm.data[y][x];
 }
 
-func (ppm *PPM) Set(x, y int, value Pixel){
+func (ppm *PPM) Set(x, y int, value Pixel) {
 	//Same as pgm.Set
 	ppm.data[x][y] = value;
 }
