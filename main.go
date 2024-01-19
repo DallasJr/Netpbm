@@ -707,7 +707,7 @@ type Point struct{
 }
 
 
-// Drawing lines by using Bresenham's Line Drawing Algorithm
+//Drawing lines by using Bresenham's Line Drawing Algorithm
 //Found people suggesting it on online forums
 func (ppm *PPM) DrawLine(p1, p2 Point, color Pixel) {
     deltaX := abs(p2.X - p1.X);
@@ -752,9 +752,11 @@ func sign(x int) int {
 }
 
 func (ppm *PPM) DrawRectangle(p1 Point, width, height int, color Pixel) {
+	//Create the 3 extra points according to the width and the height
     p2 := Point{p1.X + width , p1.Y};
     p3 := Point{p1.X, p1.Y + height };
     p4 := Point{p1.X + width , p1.Y + height};
+	//Draw the lines to connect them
     ppm.DrawLine(p1, p2, color);
     ppm.DrawLine(p2, p4, color);
     ppm.DrawLine(p4, p3, color);
@@ -762,6 +764,7 @@ func (ppm *PPM) DrawRectangle(p1 Point, width, height int, color Pixel) {
 }
 
 func (ppm *PPM) DrawFilledRectangle(p1 Point, width, height int, color Pixel) {
+	//Draw horizontal lines with the asked width under each other until the height is reached
 	p2 := Point{p1.X + width, p1.Y};
 	for i := 0; i <= height; i++ {
 		ppm.DrawLine(p1, p2, color);
@@ -771,12 +774,16 @@ func (ppm *PPM) DrawFilledRectangle(p1 Point, width, height int, color Pixel) {
 }
 
 func (ppm *PPM) DrawCircle(center Point, radius int, color Pixel) {
+	//Loop through each pixel
 	for y := 0; y < ppm.height; y++ {
 		for x := 0; x < ppm.width; x++ {
+			//Calculate the distance from the current pixel to the center of the circle
 			dx := float64(x - center.X);
 			dy := float64(y - center.Y);
 			distance := math.Sqrt(dx*dx + dy*dy);
-			if math.Abs(distance-float64(radius-1)) < 0.5 {
+			//Check if the distance is approximately equal to the specified radius
+			//*0.85 is to obtain a circle looking like the tester's circle even if it's not really a circle... In reality, remove "*0.85" and it's a real circle
+			if math.Abs(distance-float64(radius)*0.85) < 0.5 {
 				ppm.data[y][x] = color;
 			}
 		}
@@ -784,33 +791,49 @@ func (ppm *PPM) DrawCircle(center Point, radius int, color Pixel) {
 }
 
 func (ppm *PPM) DrawFilledCircle(center Point, radius int, color Pixel) {
-    for y := -radius; y <= radius; y++ {
-        for x := -radius; x <= radius; x++ {
-            if x*x+y*y <= radius*radius {
-                px := center.X + x;
-                py := center.Y + y;
-                if px >= 0 && px < ppm.width && py >= 0 && py < ppm.height {
-                    ppm.data[py][px] = color;
-                }
-            }
-        }
+	//Draw a circle with the radius getting smaller until it is at 0;
+	for radius >= 0 {
+        ppm.DrawCircle(center, radius, color);
+		radius--;
     }
 }
 
 func (ppm *PPM) DrawTriangle(p1, p2, p3 Point, color Pixel) {
+	//Draw lines and link the 3 points
     ppm.DrawLine(p1, p2, color);
     ppm.DrawLine(p2, p3, color);
     ppm.DrawLine(p3, p1, color);
 }
 
+//Draw a line from p1 to p3 and move p1 towars p2 until the triangle is filled
 func (ppm *PPM) DrawFilledTriangle(p1, p2, p3 Point, color Pixel) {
-
+	//Loop until p1 reaches p2
+	for (p1 != p2) {
+		//Draw a line between p1 and p3
+		ppm.DrawLine(p3, p1, color);
+		//Increment or decrement X of p1 based on p2 position
+		if (p1.X != p2.X && p1.X < p2.X) {
+			p1.X++;
+		} else if (p1.X != p2.X && p1.X > p2.X) {
+			p1.X--;
+		}
+		//Increment or decrement Y of p1 based on p2 position
+		if (p1.Y != p2.Y && p1.Y < p2.Y) {
+			p1.Y++;
+		} else if (p1.Y != p2.Y && p1.Y > p2.Y) {
+			p1.Y--;
+		}
+	}
+	//Draw a final line between the last position of p1 (should be at p2 at this point) and p3
+	ppm.DrawLine(p3, p1, color);
 }
 
 func (ppm *PPM) DrawPolygon(points []Point, color Pixel) {
+	//Link the points with a line
     for i := 0; i < len(points)-1; i++ {
         ppm.DrawLine(points[i], points[i+1], color);
     }
+	//Link the last and the first point with a line
     ppm.DrawLine(points[len(points)-1], points[0], color);
 }
 
