@@ -535,7 +535,9 @@ func TestPPMToPGM(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	ppm.Save("test.ppm")
 	pgm := ppm.ToPGM()
+	pgm.Save("test.pgm")
 	if pgm.magicNumber != "P2" {
 		t.Error("Magic number not set correctly")
 	}
