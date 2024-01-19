@@ -535,9 +535,7 @@ func TestPPMToPGM(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	ppm.Save("test.ppm")
 	pgm := ppm.ToPGM()
-	pgm.Save("test.pgm")
 	if pgm.magicNumber != "P2" {
 		t.Error("Magic number not set correctly")
 	}
@@ -640,6 +638,7 @@ func TestPPMDrawCircle(t *testing.T) {
 		t.Error(err)
 	}
 	ppm.DrawCircle(Point{X: 7, Y: 7}, 5, Pixel{R: 0, G: 255, B: 0})
+
 	for i := 0; i < imageWidth*imageHeight; i++ {
 		x := i % imageWidth
 		y := i / imageWidth
@@ -655,6 +654,7 @@ func TestPPMDrawFilledCircle(t *testing.T) {
 		t.Error(err)
 	}
 	ppm.DrawFilledCircle(Point{X: 7, Y: 7}, 5, Pixel{R: 0, G: 255, B: 0})
+
 	for i := 0; i < imageWidth*imageHeight; i++ {
 		x := i % imageWidth
 		y := i / imageWidth
@@ -670,6 +670,7 @@ func TestPPMDrawTriangle(t *testing.T) {
 		t.Error(err)
 	}
 	ppm.DrawTriangle(Point{X: 1, Y: 1}, Point{X: 8, Y: 1}, Point{X: 8, Y: 8}, Pixel{R: 0, G: 255, B: 0})
+
 	for i := 0; i < imageWidth*imageHeight; i++ {
 		x := i % imageWidth
 		y := i / imageWidth
@@ -685,6 +686,7 @@ func TestPPMDrawFilledTriangle(t *testing.T) {
 		t.Error(err)
 	}
 	ppm.DrawFilledTriangle(Point{X: 1, Y: 1}, Point{X: 8, Y: 1}, Point{X: 8, Y: 8}, Pixel{R: 0, G: 255, B: 0})
+
 	for i := 0; i < imageWidth*imageHeight; i++ {
 		x := i % imageWidth
 		y := i / imageWidth
