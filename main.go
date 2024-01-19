@@ -141,27 +141,27 @@ func (pbm *PBM) Save(filename string) error {
 		}
 		writer.Flush();
 	} else if pbm.magicNumber == "P4" {
-        for _, row := range pbm.data {
+		for _, row := range pbm.data {
 			//Process each group of 8 pixels in the row
-            for x := 0; x < pbm.width; x = x + 8 {
+			for x := 0; x < pbm.width; x = x + 8 {
 				//Process a row of pixel data
-                var byteValue byte;
+				var byteValue byte;
 				//Loop up to 8 pixels in the row or until the end of the row is reached
-                for i := 0; i < 8 && x+i < pbm.width; i++ {
-                    bitIndex := 7 - i;
+				for i := 0; i < 8 && x+i < pbm.width; i++ {
+					bitIndex := 7 - i;
 					//Update 'byteValue' by setting the corresponding bit if the pixel at the current index in the row is set
-                    if row[x+i] {
-                        byteValue |= 1 << bitIndex;
-                    }
-                }
+					if row[x+i] {
+						byteValue |= 1 << bitIndex;
+					}
+				}
 				//Write the combined byte value to the file.
-                _, err = file.Write([]byte{byteValue});
-                if err != nil {
-                    return fmt.Errorf("error writing pixel data: %v", err);
-                }
-            }
-        }
-    }
+				_, err = file.Write([]byte{byteValue});
+				if err != nil {
+					return fmt.Errorf("error writing pixel data: %v", err);
+				}
+			}
+		}
+	}
 	return nil;
 }
 
@@ -205,11 +205,11 @@ func (pbm *PBM) Flop() {
 	cursor := pbm.height - 1;
 	//Loop through each lines
 	for y, _ := range pbm.data {
-        //Swap the current line with the line pointed to by the cursor
+		//Swap the current line with the line pointed to by the cursor
 		temp := pbm.data[y];
 		pbm.data[y] = pbm.data[cursor];
 		pbm.data[cursor] = temp;
-        //Move the cursor to one line higher
+		//Move the cursor to one line higher
 		cursor--;
 		//Break the loop when the cursor crosses or reaches the current line
 		if cursor < y || cursor == y {
@@ -269,18 +269,18 @@ func ReadPGM(filename string) (*PGM, error) {
 				//Create an array of uint8 of the size of the image
 				pixelData := make([]uint8, pgm.width*pgm.height);
 				//Same as ReadPBM
-                fileContent, err := os.ReadFile(filename);
-                if err != nil {
-                    return nil, fmt.Errorf("couldn't read file: %v", err);
-                }
-                copy(pixelData, fileContent[len(fileContent)-(pgm.width*pgm.height):])
-                pixelIndex := 0;
-                for y := 0; y < pgm.height; y++ {
-                    for x := 0; x < pgm.width; x++ {
-                        pgm.data[y][x] = pixelData[pixelIndex];
-                        pixelIndex++;
-                    }
-                }
+				fileContent, err := os.ReadFile(filename);
+				if err != nil {
+					return nil, fmt.Errorf("couldn't read file: %v", err);
+				}
+				copy(pixelData, fileContent[len(fileContent)-(pgm.width*pgm.height):])
+				pixelIndex := 0;
+				for y := 0; y < pgm.height; y++ {
+					for x := 0; x < pgm.width; x++ {
+						pgm.data[y][x] = pixelData[pixelIndex];
+						pixelIndex++;
+					}
+				}
 				break;
 			}
 		}
@@ -331,16 +331,16 @@ func (pgm *PGM) Save(filename string) error {
 		}
 		writer.Flush();
 	} else if pgm.magicNumber == "P5" {
-        for _, row := range pgm.data {
-            for _, pixel := range row {
+		for _, row := range pgm.data {
+			for _, pixel := range row {
 				//We can simply convert it to []byte
-                _, err = file.Write([]byte{pixel});
-                if err != nil {
-                    return fmt.Errorf("error writing pixel data: %v", err);
-                }
-            }
-        }
-    }
+				_, err = file.Write([]byte{pixel});
+				if err != nil {
+					return fmt.Errorf("error writing pixel data: %v", err);
+				}
+			}
+		}
+	}
 	return nil
 }
 
@@ -398,7 +398,7 @@ func (pgm *PGM) SetMaxValue(maxValue uint8) {
 		for x, _ := range pgm.data[y] {
 			prevvalue := pgm.data[y][x];
 			//Calculate the new pixel value based on the new maximum value
-            //Adjusting the pixel value proportionally to the new max value
+			//Adjusting the pixel value proportionally to the new max value
 			newvalue := prevvalue*uint8(5)/pgm.max;
 			pgm.data[y][x] = newvalue;
 		}
@@ -408,21 +408,21 @@ func (pgm *PGM) SetMaxValue(maxValue uint8) {
 
 func (pgm *PGM) Rotate90CW() {
 	//Create a new matrix to store the rotated pixel data
-    rotatedData := make([][]uint8, pgm.width);
-    for i := range rotatedData {
-        rotatedData[i] = make([]uint8, pgm.height);
-    }
+	rotatedData := make([][]uint8, pgm.width);
+	for i := range rotatedData {
+		rotatedData[i] = make([]uint8, pgm.height);
+	}
 	//Loop through each pixel in the original image
-    for i := 0; i < pgm.width; i++ {
-        for j := 0; j < pgm.height; j++ {
-            //Rotate the pixel by 90 degrees clockwise and assign it
-            rotatedData[i][j] = pgm.data[pgm.height-1-j][i];
-        }
-    }
+	for i := 0; i < pgm.width; i++ {
+		for j := 0; j < pgm.height; j++ {
+			//Rotate the pixel by 90 degrees clockwise and assign it
+			rotatedData[i][j] = pgm.data[pgm.height-1-j][i];
+		}
+	}
 	//Swap the width and height of the image.
-    pgm.width, pgm.height = pgm.height, pgm.width;
+	pgm.width, pgm.height = pgm.height, pgm.width;
 	//Update the image data with the rotated data
-    pgm.data = rotatedData;
+	pgm.data = rotatedData;
 }
 
 func (pgm *PGM) ToPBM() *PBM {
@@ -447,19 +447,19 @@ func (pgm *PGM) ToPBM() *PBM {
 }
 
 type PPM struct{
-    data [][]Pixel
-    width, height int
-    magicNumber string
-    max uint8
+	data [][]Pixel
+	width, height int
+	magicNumber string
+	max uint8
 }
 
 type Pixel struct{
-    R, G, B uint8
+	R, G, B uint8
 }
 
 func ReadPPM(filename string) (*PPM, error){
 	//Same as ReadPGM
-    file, err := os.Open(filename);
+	file, err := os.Open(filename);
 	if err != nil {
 		return nil, err;
 	}
@@ -484,39 +484,39 @@ func ReadPPM(filename string) (*PPM, error){
 			fmt.Sscanf(text, "%d", &ppm.max);
 		} else {
 			if ppm.magicNumber == "P3" {
-                val := strings.Fields(text);
+				val := strings.Fields(text);
 				//Loop through each strings in the current line
-                for i := 0; i < ppm.width; i++ {
+				for i := 0; i < ppm.width; i++ {
 					//Convert the string to uint8 and set it to the red of the pixel
-                    r, _ := strconv.ParseUint(val[i*3], 10, 8);
+					r, _ := strconv.ParseUint(val[i*3], 10, 8);
 					//Same but the index is incremented to get the next value for the green
-                    g, _ := strconv.ParseUint(val[i*3+1], 10, 8);
+					g, _ := strconv.ParseUint(val[i*3+1], 10, 8);
 					//Same but the index is incremented to get the next value for the blue
-                    b, _ := strconv.ParseUint(val[i*3+2], 10, 8);
+					b, _ := strconv.ParseUint(val[i*3+2], 10, 8);
 					//Create the pixel with the colors we just obtained and define it the matrix
-                    ppm.data[line][i] = Pixel{R: uint8(r), G: uint8(g), B: uint8(b)};
-                }
-                line++
-            } else if ppm.magicNumber == "P6" {
+					ppm.data[line][i] = Pixel{R: uint8(r), G: uint8(g), B: uint8(b)};
+				}
+				line++
+			} else if ppm.magicNumber == "P6" {
 				//Create an array of byte of the size of the image * 3 because each pixel has 3 values RGB
-                pixelData := make([]byte, ppm.width*ppm.height*3);
-                fileContent, err := os.ReadFile(filename);
-                if err != nil {
-                    return nil, fmt.Errorf("couldn't read file: %v", err);
-                }
+				pixelData := make([]byte, ppm.width*ppm.height*3);
+				fileContent, err := os.ReadFile(filename);
+				if err != nil {
+					return nil, fmt.Errorf("couldn't read file: %v", err);
+				}
 				//Same as ReachPGM but for 3 values
-                copy(pixelData, fileContent[len(fileContent)-(ppm.width*ppm.height*3):]);
-                pixelIndex := 0;
-                for y := 0; y < ppm.height; y++ {
-                    for x := 0; x < ppm.width; x++ {
-                        ppm.data[y][x].R = pixelData[pixelIndex];
-                        ppm.data[y][x].G = pixelData[pixelIndex+1];
-                        ppm.data[y][x].B = pixelData[pixelIndex+2];
-                        pixelIndex += 3;
-                    }
-                }
+				copy(pixelData, fileContent[len(fileContent)-(ppm.width*ppm.height*3):]);
+				pixelIndex := 0;
+				for y := 0; y < ppm.height; y++ {
+					for x := 0; x < ppm.width; x++ {
+						ppm.data[y][x].R = pixelData[pixelIndex];
+						ppm.data[y][x].G = pixelData[pixelIndex+1];
+						ppm.data[y][x].B = pixelData[pixelIndex+2];
+						pixelIndex += 3;
+					}
+				}
 				break;
-            }
+			}
 		}
 	}
 	return ppm, nil;
@@ -535,31 +535,31 @@ func (ppm *PPM) Save(filename string) error {
 	fmt.Fprintf(writer, "%d\n", ppm.max);
 	writer.Flush();
 	if ppm.magicNumber == "P3" {
-        for y, row := range ppm.data {
-            for i, pixel := range row {
-                xtra := " ";
-                if i == len(row)-1 {
-                    xtra = "";
-                }
+		for y, row := range ppm.data {
+			for i, pixel := range row {
+				xtra := " ";
+				if i == len(row)-1 {
+					xtra = "";
+				}
 				//Write the RGB colors in the writer
-                fmt.Fprintf(writer, "%d %d %d%s", pixel.R, pixel.G, pixel.B, xtra);
-            }
-            if y != len(ppm.data)-1 {
-                fmt.Fprintln(writer, "");
-            }
-        }
-        writer.Flush();
-    } else if ppm.magicNumber == "P6" {
+				fmt.Fprintf(writer, "%d %d %d%s", pixel.R, pixel.G, pixel.B, xtra);
+			}
+			if y != len(ppm.data)-1 {
+				fmt.Fprintln(writer, "");
+			}
+		}
+		writer.Flush();
+	} else if ppm.magicNumber == "P6" {
 		//Same as pgm.Save but for the 3 colors RGB
-        for _, row := range ppm.data {
-            for _, pixel := range row {
-                _, err = file.Write([]byte{pixel.R, pixel.G, pixel.B});
-                if err != nil {
-                    return fmt.Errorf("error writing pixel data: %v", err);
-                }
-            }
-        }
-    }
+		for _, row := range ppm.data {
+			for _, pixel := range row {
+				_, err = file.Write([]byte{pixel.R, pixel.G, pixel.B});
+				if err != nil {
+					return fmt.Errorf("error writing pixel data: %v", err);
+				}
+			}
+		}
+	}
 	return nil;
 }
 
@@ -637,7 +637,7 @@ func (ppm *PPM) SetMaxValue(maxValue uint8) {
 		for x, _ := range ppm.data[y] {
 			pixel := ppm.data[y][x];
 			//Calculate the new pixel value based on the new maximum value for each color
-            //Adjusting the pixel value proportionally to the new max value
+			//Adjusting the pixel value proportionally to the new max value
 			pixel.R = uint8(float64(pixel.R)*float64(maxValue)/float64(ppm.max));
 			pixel.G = uint8(float64(pixel.G)*float64(maxValue)/float64(ppm.max));
 			pixel.B = uint8(float64(pixel.B)*float64(maxValue)/float64(ppm.max));
@@ -649,17 +649,17 @@ func (ppm *PPM) SetMaxValue(maxValue uint8) {
 
 func (ppm *PPM) Rotate90CW() {
 	//Same as pgm.Rotate90CW but the matrix is [][]Pixel not [][]uint8
-    rotatedData := make([][]Pixel, ppm.width);
-    for i := range rotatedData {
-        rotatedData[i] = make([]Pixel, ppm.height);
-    }
-    for i := 0; i < ppm.width; i++ {
-        for j := 0; j < ppm.height; j++ {
-            rotatedData[i][j] = ppm.data[ppm.height-1-j][i];
-        }
-    }
-    ppm.width, ppm.height = ppm.height, ppm.width;
-    ppm.data = rotatedData;
+	rotatedData := make([][]Pixel, ppm.width);
+	for i := range rotatedData {
+		rotatedData[i] = make([]Pixel, ppm.height);
+	}
+	for i := 0; i < ppm.width; i++ {
+		for j := 0; j < ppm.height; j++ {
+			rotatedData[i][j] = ppm.data[ppm.height-1-j][i];
+		}
+	}
+	ppm.width, ppm.height = ppm.height, ppm.width;
+	ppm.data = rotatedData;
 }
 
 func (ppm *PPM) ToPBM() *PBM{
@@ -703,64 +703,64 @@ func (ppm *PPM) ToPGM() *PGM{
 }
 
 type Point struct{
-    X, Y int
+	X, Y int
 }
 
 
 //Drawing lines by using Bresenham's Line Drawing Algorithm
 //Found people suggesting it on online forums
 func (ppm *PPM) DrawLine(p1, p2 Point, color Pixel) {
-    deltaX := abs(p2.X - p1.X);
-    deltaY := abs(p2.Y - p1.Y);
-    sx, sy := sign(p2.X-p1.X), sign(p2.Y-p1.Y);
-    err := deltaX - deltaY;
-    for {
-        if (p1.X >= 0 && p1.X < ppm.width && p1.Y >= 0 && p1.Y < ppm.height) {
-            ppm.data[p1.Y][p1.X] = color;
-        }
-        if p1.X == p2.X && p1.Y == p2.Y {
-            break;
-        }
-        e2 := 2 * err;
-        if e2 > -deltaY {
-            err -= deltaY;
-            p1.X += sx;
-        }
-        if e2 < deltaX {
-            err += deltaX;
-            p1.Y += sy;
-        }
-    }
+	deltaX := abs(p2.X - p1.X);
+	deltaY := abs(p2.Y - p1.Y);
+	sx, sy := sign(p2.X-p1.X), sign(p2.Y-p1.Y);
+	err := deltaX - deltaY;
+	for {
+		if (p1.X >= 0 && p1.X < ppm.width && p1.Y >= 0 && p1.Y < ppm.height) {
+			ppm.data[p1.Y][p1.X] = color;
+		}
+		if p1.X == p2.X && p1.Y == p2.Y {
+			break;
+		}
+		e2 := 2 * err;
+		if e2 > -deltaY {
+			err -= deltaY;
+			p1.X += sx;
+		}
+		if e2 < deltaX {
+			err += deltaX;
+			p1.Y += sy;
+		}
+	}
 }
 //If negative, change it to positive
 func abs(x int) int {
-    if x < 0 {
-        return -x;
-    }
-    return x;
+	if x < 0 {
+		return -x;
+	}
+	return x;
 }
 //Return 1 if it's over 0
 //Return 0 if it's 0
 //Return -1 if  it's negative
 func sign(x int) int {
-    if x > 0 {
-        return 1;
-    } else if x < 0 {
-        return -1;
-    }
-    return 0;
+	if x > 0 {
+		return 1;
+	} else if x < 0 {
+		return -1;
+	}
+	return 0;
 }
 
 func (ppm *PPM) DrawRectangle(p1 Point, width, height int, color Pixel) {
 	//Create the 3 extra points according to the width and the height
-    p2 := Point{p1.X + width , p1.Y};
-    p3 := Point{p1.X, p1.Y + height };
-    p4 := Point{p1.X + width , p1.Y + height};
+	p2 := Point{p1.X + width , p1.Y};
+	p3 := Point{p1.X, p1.Y + height };
+	p4 := Point{p1.X + width , p1.Y + height};
 	//Draw the lines to connect them
-    ppm.DrawLine(p1, p2, color);
-    ppm.DrawLine(p2, p4, color);
-    ppm.DrawLine(p4, p3, color);
-    ppm.DrawLine(p3, p1, color);
+	ppm.DrawLine(p1, p2, color);
+	ppm.DrawLine(p2, p4, color);
+	ppm.DrawLine(p4, p3, color);
+	ppm.DrawLine(p3, p1, color);
 }
 
 func (ppm *PPM) DrawFilledRectangle(p1 Point, width, height int, color Pixel) {
@@ -793,16 +793,16 @@ func (ppm *PPM) DrawCircle(center Point, radius int, color Pixel) {
 func (ppm *PPM) DrawFilledCircle(center Point, radius int, color Pixel) {
 	//Draw a circle with the radius getting smaller until it is at 0;
 	for radius >= 0 {
-        ppm.DrawCircle(center, radius, color);
+		ppm.DrawCircle(center, radius, color);
 		radius--;
-    }
+	}
 }
 
 func (ppm *PPM) DrawTriangle(p1, p2, p3 Point, color Pixel) {
 	//Draw lines and link the 3 points
-    ppm.DrawLine(p1, p2, color);
-    ppm.DrawLine(p2, p3, color);
-    ppm.DrawLine(p3, p1, color);
+	ppm.DrawLine(p1, p2, color);
+	ppm.DrawLine(p2, p3, color);
+	ppm.DrawLine(p3, p1, color);
 }
 
 //Draw a line from p1 to p3 and move p1 towars p2 until the triangle is filled
@@ -830,11 +830,11 @@ func (ppm *PPM) DrawFilledTriangle(p1, p2, p3 Point, color Pixel) {
 
 func (ppm *PPM) DrawPolygon(points []Point, color Pixel) {
 	//Link the points with a line
-    for i := 0; i < len(points)-1; i++ {
-        ppm.DrawLine(points[i], points[i+1], color);
-    }
+	for i := 0; i < len(points)-1; i++ {
+		ppm.DrawLine(points[i], points[i+1], color);
+	}
 	//Link the last and the first point with a line
-    ppm.DrawLine(points[len(points)-1], points[0], color);
+	ppm.DrawLine(points[len(points)-1], points[0], color);
 }
 
 func (ppm *PPM) DrawFilledPolygon(points []Point, color Pixel) {
